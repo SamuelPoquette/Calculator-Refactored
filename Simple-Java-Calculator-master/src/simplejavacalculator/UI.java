@@ -119,6 +119,7 @@ public class UI implements ActionListener {
         butCancel.addActionListener(this);
     }
 
+    //Refactored for mono operator modes
     @Override
     public void actionPerformed(ActionEvent e) {
         final Object source = e.getSource();
@@ -193,6 +194,7 @@ public class UI implements ActionListener {
         text.selectAll();
     }
 
+    //gets input from buttons
     public Double reader() {
         Double num;
         String str;
@@ -201,7 +203,8 @@ public class UI implements ActionListener {
 
         return num;
     }
-
+    
+    //writes output to calculator text box
     public void writer(final Double num) {
         if (Double.isNaN(num)) {
             text.setText("");

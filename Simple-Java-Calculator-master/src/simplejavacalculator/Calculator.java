@@ -4,11 +4,14 @@ import static java.lang.Math.log;
 import static java.lang.Math.log10;
 import static java.lang.Math.pow;
 
+//List containing methods for bi operator math operations
+//Should be refactored like mono operators
 public class Calculator {
     public enum BiOperatorModes {
         normal, add, minus, multiply, divide , xpowerofy 
     }
 
+    //Class containing methods for mono operator math operations
     public static class MonoOperatorModes {
     	
         static Double square(Double num) {
