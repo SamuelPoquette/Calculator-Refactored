@@ -1,6 +1,5 @@
 package simplejavacalculator;
 
-import static java.lang.Math.log;
 import static java.lang.Math.log10;
 import static java.lang.Math.pow;
 

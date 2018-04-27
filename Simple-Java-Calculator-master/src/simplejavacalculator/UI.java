@@ -21,6 +21,8 @@ package simplejavacalculator;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.function.Supplier;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -31,15 +33,14 @@ public class UI implements ActionListener {
     private final JFrame frame;
     private final JPanel panel;
     private final JTextArea text;
-    private final JButton but[], butAdd, butMinus, butMultiply, butDivide,
-            butEqual, butCancel, butSquareRoot, butSquare, butOneDevidedBy,
-            butCos, butSin, butTan, butxpowerofy, butlog, butrate;
+    private final HashMap<String, Supplier<Double>> monoOps;
+    private final HashMap<String, Supplier<Double>> biOps;
+    private final JButton but[], butEqual, butCancel;
     private final Calculator calc;
 
-    private final String[] buttonValue = { "0", "1", "2", "3", "4", "5", "6",
-            "7", "8", "9" };
-
     public UI() {
+    	calc = new Calculator();
+    	
         frame = new JFrame("Calculator PH");
         frame.setResizable(false);
         panel = new JPanel(new FlowLayout());
@@ -50,24 +51,28 @@ public class UI implements ActionListener {
             but[i] = new JButton(String.valueOf(i));
         }
 
-        butAdd = new JButton("+");
-        butMinus = new JButton("-");
-        butMultiply = new JButton("*");
-        butDivide = new JButton("/");
+        // declare mono-operation buttons
+        monoOps = new HashMap<>();
+        monoOps.put("\u221A", () -> Calculator.MonoOperatorModes.squareRoot(reader()));
+        monoOps.put("x*x", () -> Calculator.MonoOperatorModes.square(reader()));
+        monoOps.put("1/x", () -> Calculator.MonoOperatorModes.oneDevidedBy(reader()));
+        monoOps.put("Cos", () -> Calculator.MonoOperatorModes.cos(reader()));
+        monoOps.put("Sin", () -> Calculator.MonoOperatorModes.sin(reader()));
+        monoOps.put("Tan", () -> Calculator.MonoOperatorModes.tan(reader()));
+        monoOps.put("log10(x)", () -> Calculator.MonoOperatorModes.log(reader()));
+        monoOps.put("x%", () -> Calculator.MonoOperatorModes.rate(reader()));
+        
+        // declare bi-operation buttons
+        biOps = new HashMap<>();
+        biOps.put("+", () -> calc.calculateBi(Calculator.BiOperatorModes.add, reader()));
+        biOps.put("-", () -> calc.calculateBi(Calculator.BiOperatorModes.minus, reader()));
+        biOps.put("*", () -> calc.calculateBi(Calculator.BiOperatorModes.multiply, reader()));
+        biOps.put("/", () -> calc.calculateBi(Calculator.BiOperatorModes.divide, reader()));
+        biOps.put("x^y", () -> calc.calculateBi(Calculator.BiOperatorModes.xpowerofy, reader()));
+        
+        // declare other buttons
         butEqual = new JButton("=");
-        butSquareRoot = new JButton("√");
-        butSquare = new JButton("x*x");
-        butOneDevidedBy = new JButton("1/x");
-        butCos = new JButton("Cos");
-        butSin = new JButton("Sin");
-        butTan = new JButton("Tan");
-        butxpowerofy = new JButton("x^y");
-        butlog = new JButton("log10(x)");
-        butrate = new JButton("x%");
-
         butCancel = new JButton("C");
-
-        calc = new Calculator();
     }
 
     public void init() {
@@ -78,42 +83,27 @@ public class UI implements ActionListener {
 
         panel.add(text);
        
-        for (int i = 1; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             panel.add(but[i]);
             but[i].addActionListener(this);
         }
-        panel.add(but[0]);
 
-        panel.add(butAdd);
-        panel.add(butMinus);
-        panel.add(butMultiply);
-        panel.add(butDivide);
-        panel.add(butSquare);
-        panel.add(butSquareRoot);
-        panel.add(butOneDevidedBy);
-        panel.add(butCos);
-        panel.add(butSin);
-        panel.add(butTan);
-        panel.add(butxpowerofy);
-        panel.add(butlog);
-        panel.add(butrate);
+        // Add bi-operation buttons and set listener
+        for (String key: biOps.keySet()) {
+        	JButton nButton = new JButton(key);
+        	nButton.addActionListener(this);
+        	panel.add(nButton);
+        }
 
+        // Add mono-operation buttons and set listener
+        for (String key : monoOps.keySet()) {
+        	JButton nButton = new JButton(key);
+        	nButton.addActionListener(this);
+        	panel.add(nButton);
+        }
+        
         panel.add(butEqual);
         panel.add(butCancel);
-
-        butAdd.addActionListener(this);
-        butMinus.addActionListener(this);
-        butMultiply.addActionListener(this);
-        butDivide.addActionListener(this);
-        butSquare.addActionListener(this);
-        butSquareRoot.addActionListener(this);
-        butOneDevidedBy.addActionListener(this);
-        butCos.addActionListener(this);
-        butSin.addActionListener(this);
-        butTan.addActionListener(this);
-        butxpowerofy.addActionListener(this);
-        butlog.addActionListener(this);
-        butrate.addActionListener(this);
 
         butEqual.addActionListener(this);
         butCancel.addActionListener(this);
@@ -123,66 +113,27 @@ public class UI implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         final Object source = e.getSource();
-
-        for (int i = 0; i < 10; i++) {
+        final JButton srcButton = (JButton)source;
+        
+        // Numeric Values
+        for (byte i = 0; i < 10; i++) {
             if (source == but[i]) {
-                text.replaceSelection(buttonValue[i]);
+                text.replaceSelection(String.valueOf(i));
                 return;
             }
         }
 
-        if (source == butAdd) {
-            writer(calc.calculateBi(Calculator.BiOperatorModes.add, reader()));
+        // Mono Operators
+        if (monoOps.containsKey(srcButton.getText())) {
+        	writer(monoOps.get(srcButton.getText()).get());
+        }
+        
+        // Bi Operators
+        if (biOps.containsKey(srcButton.getText())) {
+        	writer(biOps.get(srcButton.getText()).get());
         }
 
-        if (source == butMinus) {
-            writer(calc.calculateBi(Calculator.BiOperatorModes.minus, reader()));
-        }
-
-        if (source == butMultiply) {
-            writer(calc.calculateBi(Calculator.BiOperatorModes.multiply,
-                reader()));
-        }
-
-        if (source == butDivide) {
-            writer(calc
-                .calculateBi(Calculator.BiOperatorModes.divide, reader()));
-        }
-        if (source == butxpowerofy) {
-            writer(calc
-                .calculateBi(Calculator.BiOperatorModes.xpowerofy, reader()));
-        }
-
-        if (source == butSquare) {
-            writer(Calculator.MonoOperatorModes.square(reader()));
-        }
-
-        if (source == butSquareRoot) {
-            writer(Calculator.MonoOperatorModes.squareRoot(reader()));
-        }
-
-        if (source == butOneDevidedBy) {
-            writer(Calculator.MonoOperatorModes.oneDevidedBy(reader()));
-        }
-
-        if (source == butCos) {
-            writer(Calculator.MonoOperatorModes.cos(reader()));
-        }
-
-        if (source == butSin) {
-            writer(Calculator.MonoOperatorModes.sin(reader()));
-        }
-
-        if (source == butTan) {
-            writer(Calculator.MonoOperatorModes.tan(reader()));
-        }
-        if (source == butlog) {
-            writer(Calculator.MonoOperatorModes.log(reader()));
-        }
-         if (source == butrate) {
-            writer(Calculator.MonoOperatorModes.rate(reader()));
-        }
-
+        // Other Buttons
         if (source == butEqual) {
             writer(calc.calculateEqual(reader()));
         }
